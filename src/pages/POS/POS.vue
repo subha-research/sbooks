@@ -32,6 +32,7 @@
       :item-discounts="(itemDiscounts as Money)"
       :coupons="(coupons as AppliedCouponCodes)"
       :open-price-list-modal="openPriceListModal"
+      :open-item-enquiry-modal="openItemEnquiryModal"
       :applied-coupons-count="appliedCouponsCount"
       :open-shift-close-modal="openShiftCloseModal"
       :open-coupon-code-modal="openCouponCodeModal"
@@ -203,6 +204,7 @@ export default defineComponent({
       openPaymentModal: false,
       openKeyboardModal: false,
       openPriceListModal: false,
+      openItemEnquiryModal: false,
       openCouponCodeModal: false,
       openShiftCloseModal: false,
       openSavedInvoiceModal: false,
@@ -979,7 +981,10 @@ export default defineComponent({
     },
     async validate() {
       await validateSinv(this.sinvDoc as SalesInvoice, this.itemQtyMap);
-      await validateShipment(this.itemSerialNumbers);
+      
+      if (!this.sinvDoc.isReturn) {
+        await validateShipment(this.itemSerialNumbers);
+      }
     },
     async applyPricingRule() {
       if (this.ignorePricingRules()) {
