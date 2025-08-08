@@ -27,19 +27,34 @@
     </p>
   </div>
 
-  <Int
-    :df="{
-      fieldname: 'quantity',
-      fieldtype: 'Int',
-      label: 'Quantity',
-    }"
-    size="small"
-    :border="false"
-    :value="row.quantity"
-    :read-only="true"
-  />
+  <div class="flex items-center">
+    <Int
+      :df="{
+        fieldname: 'quantity',
+        fieldtype: 'Int',
+        label: 'Quantity',
+      }"
+      size="small"
+      :border="false"
+      :value="row.quantity"
+      :read-only="true"
+    />
+    <div class="flex flex-col ml-1">
+      <feather-icon
+        name="chevron-up"
+        class="w-3 h-3 cursor-pointer hover:text-blue-500"
+        @click="adjustQuantity(1)"
+      />
+      <feather-icon
+        name="chevron-down"
+        class="w-3 h-3 cursor-pointer hover:text-blue-500"
+        @click="adjustQuantity(-1)"
+      />
+    </div>
+  </div>
 
   <Link
+    class="ml-5"
     :df="{
       fieldname: 'unit',
       fieldtype: 'Data',
@@ -97,7 +112,7 @@
         size="medium"
         :border="true"
         :show-label="true"
-        :value="row.transferQuantity"
+        :value="getDisplayTransferQuantity()"
         @change="(value:string) => row.set('transferQuantity', value)"
         :read-only="isReadOnly"
       />
@@ -212,7 +227,7 @@
       />
     </div>
 
-    <div v-if="showAvlQuantityInBatch()" class="px-2 pt-6 col-span-2">
+    <div v-if="showAvlQuantityInBatch()" class="px-5 pt-6 col-span-2">
       <Float
         :df="{
           fieldname: 'availableQtyInBatch',
@@ -229,7 +244,7 @@
       />
     </div>
 
-    <div v-if="hasSerialNumber" class="px-2 pt-8 col-span-2">
+    <div v-if="hasSerialNumber" class="px-6 pt-6 col-span-3">
       <Text
         :df="{
           label: t`Serial Number`,
@@ -305,9 +320,6 @@ export default defineComponent({
   },
 
   async mounted() {
-    this.$watch('row.quantity', (newVal: number) => {
-      this.setQuantity(newVal);
-    });
     const posProfileName = this.fyo.singles.POSSettings?.posProfile;
 
     if (posProfileName) {
@@ -332,6 +344,16 @@ export default defineComponent({
   },
 
   methods: {
+    adjustQuantity(change: number) {
+      let currentQuantity = this.row.quantity ?? 1;
+      let newQuantity = currentQuantity + change;
+
+      if (newQuantity === 0) {
+        return;
+      }
+
+      this.setQuantity(newQuantity);
+    },
     async getAvailableQtyInBatch(): Promise<number> {
       if (!this.row.batch) {
         return 0;
@@ -348,6 +370,21 @@ export default defineComponent({
       );
     },
 
+    getDisplayTransferQuantity() {
+      const transferQty = this.row.transferQuantity;
+
+      if (!this.isUOMConversionEnabled) {
+        return transferQty;
+      }
+
+      const hasValidQuantity = transferQty && transferQty;
+
+      if (this.row.isReturn && hasValidQuantity) {
+        return -Math.abs(transferQty);
+      }
+
+      return transferQty;
+    },
     showAvlQuantityInBatch() {
       const itemVisibility = this.fyo.singles.POSSettings?.itemVisibility;
 
@@ -375,7 +412,7 @@ export default defineComponent({
 
       validateSerialNumberCount(
         serialNumber,
-        this.row.quantity ?? 0,
+        Math.abs(this.row.quantity ?? 0),
         this.row.item!
       );
     },
@@ -420,7 +457,7 @@ export default defineComponent({
             invoiceItem.item === this.row.item && !invoiceItem.isFreeItem
         ) ?? [];
 
-      quantity = this.row.quantity ?? 1;
+        quantity = this.row.quantity ?? 1;
 
       try {
         await validateQty(
@@ -447,7 +484,7 @@ export default defineComponent({
           this.row.set('itemDiscountPercent', 0);
         }
         this.row.set('rate', this.fyo.pesa(0));
-
+        
         if (hasManualDiscount) {
           this.row.set('setItemDiscountAmount', true);
           this.row.set('itemDiscountAmount', manualDiscountAmount);
@@ -459,7 +496,7 @@ export default defineComponent({
     },
     async removeAddedItem(row: SalesInvoiceItem) {
       this.row.parentdoc?.remove('items', row?.idx as number);
-
+      this.row.runFormulas();
       if (!row.isFreeItem) {
         this.$emit('applyPricingRule');
       }
