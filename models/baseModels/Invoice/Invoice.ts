@@ -25,6 +25,7 @@ import {
   removeLoyaltyPoint,
   roundFreeItemQty,
   getReturnQtyTotal,
+  getReturnLoyaltyPoints,
 } from 'models/helpers';
 import { StockTransfer } from 'models/inventory/StockTransfer';
 import { validateBatch } from 'models/inventory/helpers';
@@ -58,6 +59,13 @@ export type TaxDetail = {
   rate: number;
 };
 
+export type ReturnedItemData =
+  | number
+  | {
+      quantity?: number;
+      batches?: Record<string, number>;
+    };
+
 export type InvoiceTaxItem = {
   details: TaxDetail;
   exchangeRate?: number;
@@ -79,7 +87,6 @@ export abstract class Invoice extends Transactional {
   grandTotal?: Money;
   baseGrandTotal?: Money;
   outstandingAmount?: Money;
-  initialGrandTotal?: Money;
   exchangeRate?: number;
   setDiscountAmount?: boolean;
   discountAmount?: Money;
@@ -673,7 +680,10 @@ export abstract class Invoice extends Transactional {
 
     let returnDocItems: DocValueMap[] = [];
 
-    const totalQtyOfReturnedItems = await getReturnQtyTotal(this);
+    const totalQtyOfReturnedItems: Record<
+      string,
+      number | { quantity?: number; batches?: Record<string, number> }
+    > = await getReturnQtyTotal(this);
 
     const returnBalanceItemsQty = await this.fyo.db.getReturnBalanceItemsQty(
       this.schemaName,
@@ -681,12 +691,27 @@ export abstract class Invoice extends Transactional {
     );
 
     for (const item of docItems) {
-      if (!returnBalanceItemsQty) {
-        returnDocItems = docItems.map((docItem) => ({
-          ...docItem,
-          name: undefined,
-          quantity: -(totalQtyOfReturnedItems[docItem.item as string] || 0),
-        }));
+      if (totalQtyOfReturnedItems) {
+        if (item.batch) {
+          const returnData = totalQtyOfReturnedItems[item.item as string];
+          if (typeof returnData === 'object' && returnData?.batches) {
+            returnDocItems = docItems.map((docItem) => ({
+              ...docItem,
+              name: undefined,
+              quantity: -returnData?.batches![docItem.batch as string] || 0,
+            }));
+          }
+        } else {
+          returnDocItems = docItems.map((docItem) => ({
+            ...docItem,
+            name: undefined,
+            quantity: -(totalQtyOfReturnedItems[docItem.item as string] || 0),
+            transferQuantity: -(
+              (totalQtyOfReturnedItems[docItem.item as string] as number) /
+              (item.unitConversionFactor as number)
+            ),
+          }));
+        }
 
         for (const row of returnDocItems) {
           row.itemDiscountedTotal = await this.getItemsDiscountedTotal(
@@ -705,13 +730,15 @@ export abstract class Invoice extends Transactional {
       }
 
       const returnedItem: ReturnDocItem | undefined =
-        returnBalanceItemsQty[item.item as string];
+        returnBalanceItemsQty![item.item as string];
 
       if (!returnedItem) {
         continue;
       }
 
       let quantity = returnedItem.quantity;
+      let transferQuantity = quantity / (item.unitConversionFactor as number);
+
       let serialNumber: string | undefined =
         returnedItem.serialNumbers?.join('\n');
 
@@ -720,13 +747,22 @@ export abstract class Invoice extends Transactional {
         returnedItem.batches &&
         returnedItem.batches[item.batch as string]
       ) {
-        quantity = returnedItem.batches[item.batch as string].quantity;
-
         if (returnedItem.batches[item.batch as string].serialNumbers) {
           serialNumber =
             returnedItem.batches[item.batch as string].serialNumbers?.join(
               '\n'
             );
+        }
+        const returnedItemsData = totalQtyOfReturnedItems[
+          item.item as string
+        ] as ReturnedItemData;
+
+        if (
+          typeof returnedItemsData === 'object' &&
+          returnedItemsData.batches
+        ) {
+          quantity = -returnedItemsData?.batches[item.batch as string];
+          transferQuantity = quantity / (item.unitConversionFactor as number);
         }
       }
 
@@ -735,23 +771,13 @@ export abstract class Invoice extends Transactional {
         serialNumber,
         name: undefined,
         quantity: quantity,
+        transferQuantity,
       });
     }
 
-    returnDocItems.forEach((docItems) => {
-      const itemName = docItems.item as string;
-      if (itemName in totalQtyOfReturnedItems) {
-        docItems.quantity = totalQtyOfReturnedItems[itemName];
-      }
-    });
-
     returnDocItems = returnDocItems.filter(
-      (docItems) => (docItems.quantity as number) > 0
+      (docItems) => (docItems.quantity as number) < 0
     );
-
-    returnDocItems.forEach((docItems) => {
-      docItems.quantity = -(docItems.quantity as number);
-    });
 
     const returnDocData = {
       ...docData,
@@ -888,21 +914,42 @@ export abstract class Invoice extends Transactional {
   }
 
   async getLPAddedBaseGrandTotal() {
-    if (!this.initialGrandTotal) {
-      this.initialGrandTotal = this.grandTotal;
-    }
+    const totalDiscount = this.getTotalDiscount();
 
-    const totalLotaltyAmount = await getAddedLPWithGrandTotal(
-      this.fyo,
-      this.loyaltyProgram as string,
-      this.loyaltyPoints as number
-    );
+    let baseTotal: Money;
+
+    if (!this.taxes?.length) {
+      baseTotal = (this.netTotal as Money).sub(totalDiscount);
+    } else {
+      baseTotal = this.taxes
+        .map((doc) => doc.amount as Money)
+        .reduce((a, b) => a.add(b.abs()), (this.netTotal as Money).abs())
+        .sub(totalDiscount);
+    }
+    if (!this.isReturn) {
+      const totalLoyaltyAmount = await getAddedLPWithGrandTotal(
+        this.fyo,
+        this.loyaltyProgram as string,
+        this.loyaltyPoints as number
+      );
+      return baseTotal.sub(totalLoyaltyAmount);
+    }
 
     if (this.isReturn) {
-      return this.grandTotal;
+      const loyaltyAmount = await getReturnLoyaltyPoints(this);
+
+      const totalAmount = baseTotal.abs().sub(loyaltyAmount);
+
+      this.loyaltyPoints = loyaltyAmount;
+      if (totalAmount.isNegative()) {
+        this.loyaltyPoints = totalAmount.abs().float - Math.abs(loyaltyAmount);
+        return this.fyo.pesa(0);
+      }
+
+      return baseTotal.abs().sub(loyaltyAmount);
     }
 
-    return this.initialGrandTotal?.sub(totalLotaltyAmount);
+    return baseTotal;
   }
   formulas: FormulaMap = {
     account: {

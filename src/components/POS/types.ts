@@ -19,6 +19,7 @@ export const modalNames = [
   'Alert',
   'CouponCode',
   'PriceList',
+  'ItemEnquiry',
   'ReturnSalesInvoice',
 ] as const;
 
@@ -42,6 +43,7 @@ export type PosEmits =
   | 'selectedInvoiceName'
   | 'selectedReturnInvoice'
   | 'saveAndContinue'
+  | 'handlePaymentAction'
   | 'setTransferClearanceDate';
 
 export interface POSItem {

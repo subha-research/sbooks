@@ -40,6 +40,11 @@
       @toggle-modal="emitEvent('toggleModal', 'PriceList')"
     />
 
+    <ItemEnquiryModal
+      :open-modal="openItemEnquiryModal"
+      @toggle-modal="emitEvent('toggleModal', 'ItemEnquiry')"
+    />
+
     <PaymentModal
       :open-modal="openPaymentModal"
       @toggle-modal="emitEvent('toggleModal', 'Payment')"
@@ -252,7 +257,6 @@
                         fyo.singles.Defaults?.saveButtonColour,
                     }"
                     :class="`${isReturnInvoiceEnabledReturn ? 'py-5' : 'py-6'}`"
-                    :disabled="!sinvDoc?.party || !sinvDoc?.items?.length"
                     @click="$emit('saveInvoiceAction')"
                   >
                     <slot>
@@ -269,7 +273,6 @@
                         fyo.singles.Defaults?.cancelButtonColour,
                     }"
                     :class="`${isReturnInvoiceEnabledReturn ? 'py-5' : 'py-6'}`"
-                    :disabled="!sinvDoc?.items?.length"
                     @click="() => $emit('clearValues')"
                   >
                     <slot>
@@ -327,8 +330,7 @@
                         fyo.singles.Defaults?.payButtonColour,
                     }"
                     :class="`${isReturnInvoiceEnabledReturn ? 'py-5' : 'py-6'}`"
-                    :disabled="disablePayButton"
-                    @click="emitEvent('toggleModal', 'Payment', true)"
+                    @click="emitEvent('handlePaymentAction')"
                   >
                     <slot>
                       <p class="uppercase text-lg text-white font-semibold">
@@ -345,8 +347,7 @@
                       profile?.payButtonColour ||
                       fyo.singles.Defaults?.payButtonColour,
                   }"
-                  :disabled="disablePayButton"
-                  @click="emitEvent('toggleModal', 'Payment', true)"
+                  @click="emitEvent('handlePaymentAction')"
                 >
                   <slot>
                     <p class="uppercase text-lg text-white font-semibold">
@@ -372,6 +373,7 @@ import PaymentModal from './PaymentModal.vue';
 import Button from 'src/components/Button.vue';
 import { defineComponent, PropType } from 'vue';
 import PriceListModal from './PriceListModal.vue';
+import ItemEnquiryModal from './ItemEnquiryModal.vue';
 import { Item } from 'models/baseModels/Item/Item';
 import CouponCodeModal from './CouponCodeModal.vue';
 import POSQuickActions from './POSQuickActions.vue';
@@ -404,6 +406,7 @@ export default defineComponent({
     PaymentModal,
     MultiLabelLink,
     PriceListModal,
+    ItemEnquiryModal,
     CouponCodeModal,
     POSQuickActions,
     OpenPOSShiftModal,
@@ -424,6 +427,7 @@ export default defineComponent({
     disablePayButton: Boolean,
     openPaymentModal: Boolean,
     openPriceListModal: Boolean,
+    openItemEnquiryModal: Boolean,
     openCouponCodeModal: Boolean,
     openShiftCloseModal: Boolean,
     openSavedInvoiceModal: Boolean,
@@ -498,6 +502,7 @@ export default defineComponent({
     'selectedReturnInvoice',
     'setTransferClearanceDate',
     'saveAndContinue',
+    'handlePaymentAction',
   ],
   data() {
     return {

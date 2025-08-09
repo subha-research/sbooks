@@ -32,6 +32,7 @@
       :item-discounts="(itemDiscounts as Money)"
       :coupons="(coupons as AppliedCouponCodes)"
       :open-price-list-modal="openPriceListModal"
+      :open-item-enquiry-modal="openItemEnquiryModal"
       :applied-coupons-count="appliedCouponsCount"
       :open-shift-close-modal="openShiftCloseModal"
       :open-coupon-code-modal="openCouponCodeModal"
@@ -61,6 +62,7 @@
       @selected-return-invoice="selectedReturnInvoice"
       @set-transfer-clearance-date="setTransferClearanceDate"
       @save-and-continue="handleSaveAndContinue"
+      @handle-payment-action="handlePaymentAction"
     />
     <ModernPOS
       v-else
@@ -203,6 +205,7 @@ export default defineComponent({
       openPaymentModal: false,
       openKeyboardModal: false,
       openPriceListModal: false,
+      openItemEnquiryModal: false,
       openCouponCodeModal: false,
       openShiftCloseModal: false,
       openSavedInvoiceModal: false,
@@ -614,6 +617,7 @@ export default defineComponent({
     async setLoyaltyPoints(value: number) {
       this.appliedLoyaltyPoints = value;
       await this.sinvDoc.set('redeemLoyaltyPoints', true);
+      await this.sinvDoc.runFormulas();
     },
     async selectedInvoiceName(doc: SalesInvoice) {
       const salesInvoiceDoc = (await this.fyo.doc.getDoc(
@@ -748,6 +752,7 @@ export default defineComponent({
           }
 
           await existingItems[0].set('quantity', currentQty + addQty);
+          await this.applyPricingRule();
           await this.sinvDoc.runFormulas();
           if (isInventoryItem) {
             await validateQty(
@@ -979,7 +984,10 @@ export default defineComponent({
     },
     async validate() {
       await validateSinv(this.sinvDoc as SalesInvoice, this.itemQtyMap);
-      await validateShipment(this.itemSerialNumbers);
+
+      if (!this.sinvDoc.isReturn) {
+        await validateShipment(this.itemSerialNumbers);
+      }
     },
     async applyPricingRule() {
       if (this.ignorePricingRules()) {
@@ -1052,12 +1060,31 @@ export default defineComponent({
         });
       }
     },
+    showValidationToast(method: string) {
+      showToast({
+        type: 'error',
+        message: t`${
+          !this.sinvDoc.items?.length
+            ? 'Please add items'
+            : 'Please select a customer'
+        } before ${method}`,
+      });
+    },
+
     async saveInvoiceAction() {
-      if (!this.sinvDoc.party && !this.sinvDoc.items?.length) {
+      if (!this.sinvDoc.items?.length || !this.sinvDoc.party) {
+        this.showValidationToast('saving');
+        return;
+      }
+      await this.saveOrder();
+    },
+    handlePaymentAction() {
+      if (!this.sinvDoc.items?.length || !this.sinvDoc.party) {
+        this.showValidationToast('payment');
         return;
       }
 
-      await this.saveOrder();
+      this.toggleModal('Payment', true);
     },
     routeTo,
   },
