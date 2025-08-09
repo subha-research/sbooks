@@ -801,7 +801,7 @@ export async function getReturnQtyTotal(
     if (!itemName) {
       continue;
     }
-  if (batch) {
+    if (batch) {
       if (!quantitySum[itemName]) {
         quantitySum[itemName] = { quantity: qty, batches: { [batch]: qty } };
       } else {
@@ -812,7 +812,7 @@ export async function getReturnQtyTotal(
         entry.quantity += qty;
         entry.batches![batch] = (entry.batches![batch] || 0) + qty;
       }
-      } else {
+    } else {
       quantitySum[itemName] = ((quantitySum[itemName] as number) || 0) + qty;
     }
   }

@@ -747,7 +747,6 @@ export abstract class Invoice extends Transactional {
         returnedItem.batches &&
         returnedItem.batches[item.batch as string]
       ) {
-
         if (returnedItem.batches[item.batch as string].serialNumbers) {
           serialNumber =
             returnedItem.batches[item.batch as string].serialNumbers?.join(
@@ -952,7 +951,6 @@ export abstract class Invoice extends Transactional {
 
     return baseTotal;
   }
-  
   formulas: FormulaMap = {
     account: {
       formula: async () => {

@@ -457,7 +457,7 @@ export default defineComponent({
             invoiceItem.item === this.row.item && !invoiceItem.isFreeItem
         ) ?? [];
 
-        quantity = this.row.quantity ?? 1;
+      quantity = this.row.quantity ?? 1;
 
       try {
         await validateQty(
@@ -484,7 +484,7 @@ export default defineComponent({
           this.row.set('itemDiscountPercent', 0);
         }
         this.row.set('rate', this.fyo.pesa(0));
-        
+
         if (hasManualDiscount) {
           this.row.set('setItemDiscountAmount', true);
           this.row.set('itemDiscountAmount', manualDiscountAmount);

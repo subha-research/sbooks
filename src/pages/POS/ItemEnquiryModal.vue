@@ -57,7 +57,6 @@
           @change="(value: string) => ItemEnquiry.contact = value"
         />
 
-
         <Link
           :df="{
             fieldname: 'similarProduct',
