@@ -90,6 +90,7 @@ export class Main {
       height: this.HEIGHT,
       title: this.title,
       titleBarStyle: 'hidden',
+      icon: path.join(__dirname, "build/icon.ico"),
       trafficLightPosition: { x: 16, y: 16 },
       webPreferences: {
         contextIsolation: true,
