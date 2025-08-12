@@ -756,7 +756,7 @@ export async function getReturnLoyaltyPoints(doc: Invoice) {
     },
   });
 
-const sunvDocs = returnDocs.filter((sinvDoc) => sinvDoc.name !== doc.name);
+  const sunvDocs = returnDocs.filter((sinvDoc) => sinvDoc.name !== doc.name);
 
   const totalLoyaltyPoints = sunvDocs.reduce(
     (sum, doc) => sum + Math.abs(doc.loyaltyPoints as number),
