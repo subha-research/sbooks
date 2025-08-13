@@ -93,7 +93,7 @@
   },
   "homepage": "https://frappe.io/books",
   "repository": {
-    "url": "https://github.com/frappe/books"
+    "url": "https://github.com/subha-research/sbooks"
   },
   "license": "AGPL-3.0-only"
 }
