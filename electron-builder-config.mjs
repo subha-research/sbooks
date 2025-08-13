@@ -45,7 +45,7 @@ const svasammBooksConfig = {
   },
   win: {
     publisherName: 'Svasamm Research Pvt. Ltd.',
-    signDlls: true,
+    signDlls: false,
     icon: 'build/icon.ico',
     publish: ['github'],
     target: [
@@ -63,8 +63,8 @@ const svasammBooksConfig = {
     oneClick: false,
     perMachine: false,
     allowToChangeInstallationDirectory: true,
-    installerIcon: 'build/installericon.ico',
-    uninstallerIcon: 'build/uninstallericon.ico',
+    installerIcon: 'build/installerIcon.ico',
+    uninstallerIcon: 'build/uninstallerIcon.ico',
     publish: ['github'],
   },
   linux: {
