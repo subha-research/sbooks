@@ -48,7 +48,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-artifacts
-          path: release/*.{dmg,zip,blockmap,yml} # Capture all generated macOS artifacts
+          path: dist_electron/bundled/*.{exe,zip,blockmap,yml} # Capture all generated macOS artifacts
 
   build-macos-arm:
     runs-on: macos-14 # Specifically for ARM, though the previous job builds both
@@ -95,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-arm-artifacts
-          path: release/*.{dmg,zip,blockmap,yml}
+          path: dist_electron/bundled/*.{exe,zip,blockmap,yml}
 
   build-linux:
     runs-on: ubuntu-latest
@@ -136,7 +136,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
-          path: release/*.{deb,rpm,AppImage,yml}
+          path: dist_electron/bundled/*.{exe,zip,blockmap,yml}
 
   build-windows:
     runs-on: windows-2022
@@ -178,7 +178,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-artifacts
-          path: release/*.{exe,zip,blockmap,yml}
+          path: dist_electron/bundled/*.{exe,zip,blockmap,yml}
 
   release:
     needs: [build-macos, build-macos-arm, build-linux, build-windows]
@@ -189,6 +189,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get version from package.json
+        id: get_version # Assign an ID to reference outputs
+        run: echo "PACKAGE_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+
+
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -197,10 +202,11 @@ jobs:
       - name: Create Release and Upload Assets
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ github.run_number }} # Uses the workflow run number as the tag
-          name: Release v${{ github.run_number }}
+          # Use the version from package.json, prefixing with 'v' for convention
+          tag_name: v${{ env.PACKAGE_VERSION }}
+          name: Release v${{ env.PACKAGE_VERSION }}
           body: |
-            # Release v${{ github.run_number }}
+            # Release v${{ env.PACKAGE_VERSION }}
 
             This release includes builds for:
             - macOS (Intel & ARM)
