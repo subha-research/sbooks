@@ -1,0 +1,221 @@
+name: Publish-release
+
+on: workflow_dispatch # Manual trigger
+
+jobs:
+  build-macos:
+    runs-on: macos-13 # Or macos-latest if you don't need a specific version
+    steps:
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.1'
+
+      - name: Checkout Books
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          yarn set version classic
+          yarn
+
+      - name: Set Error Log Creds
+        env:
+          ERR_LOG_KEY: ${{ secrets.ERR_LOG_KEY }}
+          ERR_LOG_URL: ${{ secrets.ERR_LOG_URL }}
+          ERR_LOG_SECRET: ${{ secrets.ERR_LOG_SECRET }}
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+        run: |
+          echo $ERR_LOG_KEY > log_creds.txt
+          echo $ERR_LOG_SECRET >> log_creds.txt
+          echo $ERR_LOG_URL >> log_creds.txt
+          echo $TELEMETRY_URL > log_creds.txt
+
+      - name: Run build (macOS x64 & arm64)
+        env:
+          # APPLE_ID: ${{ secrets.APPLE_ID }} # Uncomment and set secret if signing/notarizing
+          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }} # Uncomment and set secret if signing/notarizing
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }} # Uncomment and set secret if signing/notarizing
+          # CSC_LINK: ${{ secrets.CSC_LINK }}             # Uncomment and set secret if signing
+          # CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }} # Uncomment and set secret if signing
+          CSC_IDENTITY_AUTO_DISCOVERY: false # Set to false to disable auto-signing for unsigned builds
+          GH_TOKEN: ${{ secrets.GH_TOKEN }} # Needed if electron-builder tries to publish from here
+        run: |
+          yarn set version classic
+          yarn build --mac # This builds all configured macOS targets (dmg/zip, x64/arm64)
+
+      - name: Upload macOS Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: release/*.{dmg,zip,blockmap,yml} # Capture all generated macOS artifacts
+
+  build-macos-arm:
+    runs-on: macos-14 # Specifically for ARM, though the previous job builds both
+    steps:
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.1'
+
+      - name: Checkout Books
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          yarn set version classic
+          yarn
+
+      - name: Set Error Log Creds
+        env:
+          ERR_LOG_KEY: ${{ secrets.ERR_LOG_KEY }}
+          ERR_LOG_URL: ${{ secrets.ERR_LOG_URL }}
+          ERR_LOG_SECRET: ${{ secrets.ERR_LOG_SECRET }}
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+        run: |
+          echo $ERR_LOG_KEY > log_creds.txt
+          echo $ERR_LOG_SECRET >> log_creds.txt
+          echo $ERR_LOG_URL >> log_creds.txt
+          echo $TELEMETRY_URL > log_creds.txt
+
+      - name: Run build (macOS ARM64)
+        env:
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # CSC_LINK: ${{ secrets.CSC_LINK }}
+          # CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          yarn set version classic
+          yarn build --mac # Builds for macOS, including ARM64 due to package.json config
+
+      - name: Upload macOS ARM Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm-artifacts
+          path: release/*.{dmg,zip,blockmap,yml}
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.1'
+
+      - name: Checkout Books
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          yarn set version classic
+          yarn
+
+      - name: Set Error Log Creds
+        env:
+          ERR_LOG_KEY: ${{ secrets.ERR_LOG_KEY }}
+          ERR_LOG_URL: ${{ secrets.ERR_LOG_URL }}
+          ERR_LOG_SECRET: ${{ secrets.ERR_LOG_SECRET }}
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+        run: |
+          echo $ERR_LOG_KEY > log_creds.txt
+          echo $ERR_LOG_SECRET >> log_creds.txt
+          echo $ERR_LOG_URL >> log_creds.txt
+          echo $TELEMETRY_URL > log_creds.txt
+
+      - name: Run build (Linux)
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          yarn set version classic
+          yarn build --linux # Builds all configured Linux targets (deb/rpm/AppImage)
+
+      - name: Upload Linux Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: release/*.{deb,rpm,AppImage,yml}
+
+  build-windows:
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.1'
+
+      - name: Checkout Books
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: yarn
+
+      - name: Set Error Log Creds
+        env:
+          ERR_LOG_KEY: ${{ secrets.ERR_LOG_KEY }}
+          ERR_LOG_URL: ${{ secrets.ERR_LOG_URL }}
+          ERR_LOG_SECRET: ${{ secrets.ERR_LOG_SECRET }}
+          TELEMETRY_URL: ${{ secrets.TELEMETRY_URL }}
+        run: |
+          echo $ERR_LOG_KEY > log_creds.txt
+          echo $ERR_LOG_SECRET >> log_creds.txt
+          echo $ERR_LOG_URL >> log_creds.txt
+          echo $TELEMETRY_URL > log_creds.txt
+
+      - name: Run build (Windows)
+        env:
+          # WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }} # Uncomment and set secret if signing
+          # WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }} # Uncomment and set secret if signing
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: yarn build --win # Builds all configured Windows targets (nsis/zip)
+
+      - name: Upload Windows Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: release/*.{exe,zip,blockmap,yml}
+
+  release:
+    needs: [build-macos, build-macos-arm, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # IMPORTANT: Needed to create release and upload assets
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts # Downloads all artifacts into this directory
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }} # Uses the workflow run number as the tag
+          name: Release v${{ github.run_number }}
+          body: |
+            # Release v${{ github.run_number }}
+
+            This release includes builds for:
+            - macOS (Intel & ARM)
+            - Linux (Deb, RPM, AppImage)
+            - Windows (Installer & Portable)
+          draft: false
+          prerelease: false
+          files: |
+            downloaded-artifacts/**/*.dmg
+            downloaded-artifacts/**/*.zip
+            downloaded-artifacts/**/*.exe
+            downloaded-artifacts/**/*.deb
+            downloaded-artifacts/**/*.rpm
+            downloaded-artifacts/**/*.AppImage
+            downloaded-artifacts/**/*.blockmap
+            downloaded-artifacts/**/*.yml # Include auto-update YML files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
