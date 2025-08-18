@@ -50,6 +50,7 @@ jobs:
           name: macos-artifacts
           path: dist_electron/bundled/*.{dmg,zip,blockmap,yml} # Capture all generated macOS artifacts
 
+
   build-macos-arm:
     runs-on: macos-14 # Specifically for ARM, though the previous job builds both
     steps:
