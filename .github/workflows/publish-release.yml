@@ -29,7 +29,7 @@ jobs:
           echo $ERR_LOG_KEY > log_creds.txt
           echo $ERR_LOG_SECRET >> log_creds.txt
           echo $ERR_LOG_URL >> log_creds.txt
-          echo $TELEMETRY_URL > log_creds.txt
+          echo $TELEMETRY_URL >> log_creds.txt
 
       - name: Run build (macOS x64 & arm64)
         env:
@@ -48,7 +48,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-artifacts
-          path: dist_electron/bundled/*.{exe,zip,blockmap,yml} # Capture all generated macOS artifacts
+          path: dist_electron/bundled/*.{dmg,zip,blockmap,yml} # Capture all generated macOS artifacts
 
   build-macos-arm:
     runs-on: macos-14 # Specifically for ARM, though the previous job builds both
@@ -76,7 +76,7 @@ jobs:
           echo $ERR_LOG_KEY > log_creds.txt
           echo $ERR_LOG_SECRET >> log_creds.txt
           echo $ERR_LOG_URL >> log_creds.txt
-          echo $TELEMETRY_URL > log_creds.txt
+          echo $TELEMETRY_URL >> log_creds.txt
 
       - name: Run build (macOS ARM64)
         env:
@@ -95,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-arm-artifacts
-          path: dist_electron/bundled/*.{exe,zip,blockmap,yml}
+          path: dist_electron/bundled/*.{dmg,zip,blockmap,yml}
 
   build-linux:
     runs-on: ubuntu-latest
@@ -123,7 +123,7 @@ jobs:
           echo $ERR_LOG_KEY > log_creds.txt
           echo $ERR_LOG_SECRET >> log_creds.txt
           echo $ERR_LOG_URL >> log_creds.txt
-          echo $TELEMETRY_URL > log_creds.txt
+          echo $TELEMETRY_URL >> log_creds.txt
 
       - name: Run build (Linux)
         env:
@@ -136,7 +136,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
-          path: dist_electron/bundled/*.{exe,zip,blockmap,yml}
+          path: dist_electron/bundled/*.{deb,rpm,AppImage,yml}
 
   build-windows:
     runs-on: windows-2022
@@ -165,7 +165,7 @@ jobs:
           echo $ERR_LOG_KEY > log_creds.txt
           echo $ERR_LOG_SECRET >> log_creds.txt
           echo $ERR_LOG_URL >> log_creds.txt
-          echo $TELEMETRY_URL > log_creds.txt
+          echo $TELEMETRY_URL >> log_creds.txt
 
       - name: Run build (Windows)
         env:
