@@ -147,7 +147,6 @@ jobs:
           name: linux-artifacts
           path: dist_electron/bundled/*.{deb,rpm,AppImage,yml}
 
-
   build-windows:
     runs-on: windows-2022
     defaults:
