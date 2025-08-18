@@ -42,16 +42,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           yarn set version classic
-          yarn build --mac --publish always
+          yarn build --mac
 
-      - name: Tar files
-        run: tar -cvf dist-macOS.tar dist_electron
+      # - name: Tar files
+      #   run: tar -cvf dist-macOS.tar dist_electron
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-macOS
-          path: dist-macOS.tar
+          name: macos-artifacts
+          path: dist_electron/bundled/*.{dmg,zip,blockmap,yml}
 
   build-macos-arm:
     runs-on: macos-14
@@ -92,16 +92,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           yarn set version classic
-          yarn build --mac --publish always
+          yarn build --mac
 
-      - name: Tar files
-        run: tar -cvf dist-macOS-arm.tar dist_electron
+      # - name: Tar files
+      #   run: tar -cvf dist-macOS-arm.tar dist_electron
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-macOS-arm
-          path: dist-macOS-arm.tar
+          name: macos-arm-artifacts
+          path: dist_electron/bundled/*.{dmg,zip,blockmap,yml}
 
   build-linux:
     runs-on: ubuntu-latest
@@ -136,16 +136,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           yarn set version classic
-          yarn build --linux --publish always
+          yarn build --linux
 
-      - name: Tar files
-        run: tar -cvf dist-linux.tar dist_electron
+      # - name: Tar files
+      #   run: tar -cvf dist-linux.tar dist_electron
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-linux
-          path: dist-linux.tar
+          name: linux-artifacts
+          path: dist_electron/bundled/*.{deb,rpm,AppImage,yml}
 
   build-windows:
     runs-on: windows-2022
@@ -182,13 +182,13 @@ jobs:
           # WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           # WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: yarn build --win --publish always
+        run: yarn build --win
 
-      - name: Tar files
-        run: tar -cvf dist-windows.tar dist_electron
+      # - name: Tar files
+      #   run: tar -cvf dist-windows.tar dist_electron
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-windows
-          path: dist-windows.tar
+          name: windows-artifacts
+          path: dist_electron/bundled/*.{exe,zip,blockmap,yml}
