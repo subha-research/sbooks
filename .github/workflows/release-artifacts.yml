@@ -1,101 +1,101 @@
-name: Release Electron Application # Name for your release workflow
+# name: Release Electron Application # Name for your release workflow
 
-on:
-  workflow_dispatch: # Allows manual triggering of this release workflow
+# on:
+#   workflow_dispatch: # Allows manual triggering of this release workflow
 
-jobs:
-  release-assets:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # IMPORTANT: Needed to create release and upload assets
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+# jobs:
+#   release-assets:
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: write # IMPORTANT: Needed to create release and upload assets
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      # --- Get version from package.json ---
-      - name: Get version from package.json
-        id: get_version
-        run: echo "PACKAGE_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+#       # --- Get version from package.json ---
+#       - name: Get version from package.json
+#         id: get_version
+#         run: echo "PACKAGE_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
 
-      # --- Download ALL tarball artifacts from the previous workflow run ---
-      - name: Download all tarball artifacts from previous workflow run
-        uses: actions/download-artifact@v4
-        with:
-          path: downloaded-tarballs # Downloads all artifacts into this directory
+#       # --- Download ALL tarball artifacts from the previous workflow run ---
+#       - name: Download all tarball artifacts from previous workflow run
+#         uses: actions/download-artifact@v4
+#         with:
+#           path: downloaded-tarballs # Downloads all artifacts into this directory
 
-      # --- Extract the tarball artifacts ---
-      - name: Extract macOS Tarball
-        run: |
-          mkdir -p extracted-artifacts/macos # Create a directory for extracted files
-          tar -xvf downloaded-tarballs/dist-macOS.tar -C extracted-artifacts/macos # Extract into it
-        # Only run if the artifact was actually downloaded
-        if: success() && steps.download_artifacts.outputs.artifacts-path != ''
+#       # --- Extract the tarball artifacts ---
+#       - name: Extract macOS Tarball
+#         run: |
+#           mkdir -p extracted-artifacts/macos # Create a directory for extracted files
+#           tar -xvf downloaded-tarballs/dist-macOS.tar -C extracted-artifacts/macos # Extract into it
+#         # Only run if the artifact was actually downloaded
+#         if: success() && steps.download_artifacts.outputs.artifacts-path != ''
 
-      - name: Extract macOS ARM Tarball
-        run: |
-          mkdir -p extracted-artifacts/macos-arm
-          tar -xvf downloaded-tarballs/dist-macOS-arm.tar -C extracted-artifacts/macos-arm
-        if: success() && steps.download_artifacts.outputs.artifacts-path != ''
+#       - name: Extract macOS ARM Tarball
+#         run: |
+#           mkdir -p extracted-artifacts/macos-arm
+#           tar -xvf downloaded-tarballs/dist-macOS-arm.tar -C extracted-artifacts/macos-arm
+#         if: success() && steps.download_artifacts.outputs.artifacts-path != ''
 
-      - name: Extract Linux Tarball
-        run: |
-          mkdir -p extracted-artifacts/linux
-          tar -xvf downloaded-tarballs/dist-linux.tar -C extracted-artifacts/linux
-        if: success() && steps.download_artifacts.outputs.artifacts-path != ''
+#       - name: Extract Linux Tarball
+#         run: |
+#           mkdir -p extracted-artifacts/linux
+#           tar -xvf downloaded-tarballs/dist-linux.tar -C extracted-artifacts/linux
+#         if: success() && steps.download_artifacts.outputs.artifacts-path != ''
 
-      - name: Extract Windows Tarball
-        run: |
-          mkdir -p extracted-artifacts/windows
-          tar -xvf downloaded-tarballs/dist-windows.tar -C extracted-artifacts/windows
-        if: success() && steps.download_artifacts.outputs.artifacts-path != ''
+#       - name: Extract Windows Tarball
+#         run: |
+#           mkdir -p extracted-artifacts/windows
+#           tar -xvf downloaded-tarballs/dist-windows.tar -C extracted-artifacts/windows
+#         if: success() && steps.download_artifacts.outputs.artifacts-path != ''
 
-      - name: View contents of extracted artifacts (for debugging)
-        run: ls -R extracted-artifacts
+#       - name: View contents of extracted artifacts (for debugging)
+#         run: ls -R extracted-artifacts
 
-      # --- CREATE GITHUB RELEASE AND UPLOAD ASSETS ---
-      - name: Create Release and Upload Assets
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ env.PACKAGE_VERSION }}
-          name: Release v${{ env.PACKAGE_VERSION }}
-          body: |
-            # Release v${{ env.PACKAGE_VERSION }}
+#       # --- CREATE GITHUB RELEASE AND UPLOAD ASSETS ---
+#       - name: Create Release and Upload Assets
+#         uses: softprops/action-gh-release@v1
+#         with:
+#           tag_name: v${{ env.PACKAGE_VERSION }}
+#           name: Release v${{ env.PACKAGE_VERSION }}
+#           body: |
+#             # Release v${{ env.PACKAGE_VERSION }}
 
-            This release includes builds for:
-            - macOS (Intel & ARM)
-            - Linux (Deb, RPM, AppImage)
-            - Windows (Installer & Portable)
-          draft: false
-          prerelease: false
-          # Upload all the individual files extracted from the tarballs
-          files: |
-            extracted-artifacts/macos/**/*.dmg
-            extracted-artifacts/macos/**/*.zip
-            # extracted-artifacts/macos/**/*.exe # This might not exist for macOS, adjust if needed
-            # extracted-artifacts/macos/**/*.deb # This might not exist for macOS, adjust if needed
-            # extracted-artifacts/macos/**/*.rpm # This might not exist for macOS, adjust if needed
-            # extracted-artifacts/macos/**/*.AppImage # This might not exist for macOS, adjust if needed
-            extracted-artifacts/macos/**/*.blockmap
-            extracted-artifacts/macos/**/*.yml
+#             This release includes builds for:
+#             - macOS (Intel & ARM)
+#             - Linux (Deb, RPM, AppImage)
+#             - Windows (Installer & Portable)
+#           draft: false
+#           prerelease: false
+#           # Upload all the individual files extracted from the tarballs
+#           files: |
+#             extracted-artifacts/macos/**/*.dmg
+#             extracted-artifacts/macos/**/*.zip
+#             # extracted-artifacts/macos/**/*.exe # This might not exist for macOS, adjust if needed
+#             # extracted-artifacts/macos/**/*.deb # This might not exist for macOS, adjust if needed
+#             # extracted-artifacts/macos/**/*.rpm # This might not exist for macOS, adjust if needed
+#             # extracted-artifacts/macos/**/*.AppImage # This might not exist for macOS, adjust if needed
+#             extracted-artifacts/macos/**/*.blockmap
+#             extracted-artifacts/macos/**/*.yml
 
-            extracted-artifacts/macos-arm/**/*.dmg
-            extracted-artifacts/macos-arm/**/*.zip
-            # extracted-artifacts/macos-arm/**/*.exe # This might not exist for macOS, adjust if needed
-            # extracted-artifacts/macos-arm/**/*.deb # This might not exist for macOS, adjust if needed
-            # extracted-artifacts/macos-arm/**/*.rpm # This might not exist for macOS, adjust if needed
-            # extracted-artifacts/macos-arm/**/*.AppImage # This might not exist for macOS, adjust if needed
-            extracted-artifacts/macos-arm/**/*.blockmap
-            extracted-artifacts/macos-arm/**/*.yml
+#             extracted-artifacts/macos-arm/**/*.dmg
+#             extracted-artifacts/macos-arm/**/*.zip
+#             # extracted-artifacts/macos-arm/**/*.exe # This might not exist for macOS, adjust if needed
+#             # extracted-artifacts/macos-arm/**/*.deb # This might not exist for macOS, adjust if needed
+#             # extracted-artifacts/macos-arm/**/*.rpm # This might not exist for macOS, adjust if needed
+#             # extracted-artifacts/macos-arm/**/*.AppImage # This might not exist for macOS, adjust if needed
+#             extracted-artifacts/macos-arm/**/*.blockmap
+#             extracted-artifacts/macos-arm/**/*.yml
 
-            extracted-artifacts/linux/**/*.deb
-            extracted-artifacts/linux/**/*.rpm
-            extracted-artifacts/linux/**/*.AppImage
-            # extracted-artifacts/linux/**/*.blockmap # This might not exist for Linux
-            extracted-artifacts/linux/**/*.yml
+#             extracted-artifacts/linux/**/*.deb
+#             extracted-artifacts/linux/**/*.rpm
+#             extracted-artifacts/linux/**/*.AppImage
+#             # extracted-artifacts/linux/**/*.blockmap # This might not exist for Linux
+#             extracted-artifacts/linux/**/*.yml
 
-            extracted-artifacts/windows/**/*.exe
-            extracted-artifacts/windows/**/*.zip
-            extracted-artifacts/windows/**/*.blockmap
-            extracted-artifacts/windows/**/*.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+#             extracted-artifacts/windows/**/*.exe
+#             extracted-artifacts/windows/**/*.zip
+#             extracted-artifacts/windows/**/*.blockmap
+#             extracted-artifacts/windows/**/*.yml
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
