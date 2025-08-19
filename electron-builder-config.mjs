@@ -16,7 +16,7 @@ const packageDirPath = path.join(root, 'dist_electron', 'bundled');
 
 const svasammBooksConfig = {
   productName: 'Svasamm Books',
-  appId: 'io.frappe.books',
+  appId: 'com.svasamm.sbooks',
   asarUnpack: '**/*.node',
   extraResources: [
     { from: 'log_creds.txt', to: '../creds/log_creds.txt' },

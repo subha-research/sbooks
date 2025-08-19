@@ -1,11 +1,11 @@
 <div align="center" markdown="1">
 <br/>
 
-<img src="https://frappe.io/files/books.png" alt="Svasamm Books logo" width="80"/>
+<img src="./build/167x167.png" alt="Svasamm Books logo" width="80"/>
 
 <br/>
 
-<h1>Svasamm Books</h1>
+<h1>Svasamm Books – Built alongside Frappe Books</h1>
 
 **Modern Accounting Made Simple**
 
